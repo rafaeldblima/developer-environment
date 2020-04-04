@@ -1,0 +1,38 @@
+- name: Install required system packages
+  action: >
+    {{ ansible_pkg_mgr }} state=latest update_cache=yes pkg={{item.pkg}}
+  with_items:
+    - pkg: apt-transport-https
+    - pkg: ca-certificates
+    - pkg: software-properties-common
+    - pkg: python3-pip
+    - pkg: python3-setuptools
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Update apt and install docker-ce
+  action: >
+    {{ ansible_pkg_mgr }} state=present update_cache=yes pkg=docker-ce
+
+- name: Add the ansible_user to docker group
+  user:
+    name: "{{item}}"
+    groups: "docker"
+    append: yes
+    with_items: '{{ users }}'
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Install Docker Compose Module for Python
+  pip:
+    name: docker-compose
