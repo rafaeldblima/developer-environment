@@ -1,0 +1,10 @@
+
+*.retry
+.idea/
+*venv/
+*.vscode/
+.DS_Store
+.vaultpass
+secret
+*.secret
+.python-version

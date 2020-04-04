@@ -1,0 +1,17 @@
+- hosts: all
+  become: yes
+  gather_facts: false
+  pre_tasks:
+    - name: Install python for Ansible
+      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3-minimal)
+      changed_when: false
+
+- hosts: all
+  gather_facts: true
+  roles:
+    - pyenv
+    - pipenv
+  vars:
+    users:
+      - <YOUR-USER-HERE>
+...

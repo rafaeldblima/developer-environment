@@ -1,0 +1,107 @@
+---
+- name: install pip
+  become: yes
+  package:
+    name: python3-pip
+    state: present
+
+# pip module seems to fail idempotence with --user
+- name: check if Pipenv installed
+  become: yes
+  become_user: '{{ item }}'
+  stat:
+    path: '~/.local/bin/pipenv'
+  register: pipenv_check
+  with_items: '{{ users }}'
+
+- name: install Pipenv
+  become: yes
+  become_user: '{{ item.item }}'
+  pip:
+    name: pipenv
+    state: present
+    executable: pip3
+    extra_args: --user
+  when:
+    - not item.stat.exists
+  loop_control:
+    label: "{{ item.item }}"
+  with_items: '{{ pipenv_check.results }}'
+
+- name: write .pipenvrc for users
+  become: yes
+  become_user: '{{ item }}'
+  template:
+    src: pipenvrc.j2
+    dest: '~{{ item }}/.pipenvrc'
+    backup: yes
+    mode: 'u=rw,go=r'
+  with_items: '{{ users }}'
+
+- name: check for .bash_profile
+  become: yes
+  become_user: '{{ item }}'
+  stat:
+    path: ~/.bash_profile
+  register: bash_profile_check
+  with_items: '{{ users }}'
+
+- name: add .pipenvrc to .bash_profile
+  become: yes
+  become_user: '{{ item.item }}'
+  lineinfile:
+    path: '~/.bash_profile'
+    line: 'source ~/.pipenvrc'
+  when:
+    - item.stat.exists
+  loop_control:
+    label: "{{ item.item }}"
+  with_items: '{{ bash_profile_check.results }}'
+
+- name: check for .bashrc
+  become: yes
+  become_user: '{{ item.item }}'
+  stat:
+    path: ~/.bashrc
+  register: bashrc_check
+  when:
+    - not item.stat.exists
+  loop_control:
+    label: "{{ item.item }}"
+  with_items: '{{ bash_profile_check.results }}'
+
+- name: add .pipenvrc to .bashrc
+  become: yes
+  become_user: '{{ item.item.item }}'
+  lineinfile:
+    path: '~/.bashrc'
+    line: 'source ~/.pipenvrc'
+  when:
+    - (not item.item.stat.exists) and item.stat.exists
+  loop_control:
+    label: "{{ item.item.item }}"
+  with_items: '{{ bashrc_check.results }}'
+
+- name: check for .zshrc
+  become: yes
+  become_user: '{{ item.item }}'
+  stat:
+    path: ~/.zshrc
+  register: zshrc_check
+  when:
+    - not item.stat.exists
+  loop_control:
+    label: "{{ item.item }}"
+  with_items: '{{ bash_profile_check.results }}'
+
+- name: add .pipenvrc to .zshrc
+  become: yes
+  become_user: '{{ item.item.item }}'
+  lineinfile:
+    path: '~/.zshrc'
+    line: 'source ~/.pipenvrc'
+  when:
+    - (not item.item.stat.exists) and item.stat.exists
+  loop_control:
+    label: "{{ item.item.item }}"
+  with_items: '{{ bashrc_check.results }}'
