@@ -11,6 +11,8 @@
   roles:
     - pyenv
     - pipenv
+    - docker
+    - node
   vars:
     users:
       - <YOUR-USER-HERE>

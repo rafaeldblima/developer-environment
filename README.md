@@ -7,6 +7,8 @@
     
    * Pyenv
    * Pipenv
+   * Docker
+   * NVM && Node
    
    > TODO: More roles
 
